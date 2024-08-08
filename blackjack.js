@@ -7,10 +7,18 @@ let yourAceCount = 0;
 let hidden;
 let deck;
 
+let canDouble = true;
 let canHit = true;
 let balance = 1000;
 let betAmount = 0;
+let playerBet = 0;
 let gameInProgress = false;
+
+let gamesPlayed = 0;
+let wins = 0;
+let losses = 0;
+let ties = 0;
+let blackjacks = 0;
 
 window.onload = function() {
     buildDeck();
@@ -18,6 +26,19 @@ window.onload = function() {
     updateBalanceDisplay();
     document.getElementById("restart").addEventListener("click", restartGame);
     document.getElementById("place-bet").addEventListener("click", placeBet);
+    document.getElementById("rebet").addEventListener("click", reBet);
+    document.getElementById("hit").addEventListener("click", hit);
+    document.getElementById("stay").addEventListener("click", stay);
+    document.getElementById("double-down").addEventListener("click", doubleDown);
+    updateStatisticsDisplay();
+}
+
+function updateStatisticsDisplay() {
+    document.getElementById("games-played").innerText = gamesPlayed;
+    document.getElementById("wins").innerText = wins;
+    document.getElementById("losses").innerText = losses;
+    document.getElementById("ties").innerText = ties;
+    document.getElementById("blackjack").innerText = blackjacks;
 }
 
 function buildDeck() {
@@ -48,19 +69,23 @@ function updateBalanceDisplay() {
 
 function placeBet() {
     if (gameInProgress) {
-        restartGame();
-    }
+        alert("A game is already in progress. Please finish the current game");
+        return;
+    } 
 
     betAmount = parseInt(document.getElementById("bet-amount").value);
     if (isNaN(betAmount) || betAmount <= 0 || betAmount > balance) {
         alert("Invalid bet amount");
         return;
     }
+    restartGame();
 
     balance -= betAmount;
+    playerBet = betAmount;
     updateBalanceDisplay();
     document.getElementById("hit").disabled = false;
     document.getElementById("stay").disabled = false;
+    document.getElementById("double-down").disabled = false;
     startGame();
 }
 
@@ -76,7 +101,7 @@ function startGame() {
     dealerAceCount += checkAce(card);
     cardImg.classList.add("deal-animation");
     document.getElementById("dealer-cards").append(cardImg);
-    showYourSum();
+
     for (let i = 0; i < 2; i++) {
         setTimeout(() => {
             let { card, cardImg } = drawCard();
@@ -84,10 +109,12 @@ function startGame() {
             yourAceCount += checkAce(card);
             cardImg.classList.add("deal-animation");
             document.getElementById("your-cards").append(cardImg);}, i * 500);
-        
     }
-    document.getElementById("hit").addEventListener("click", hit);
-    document.getElementById("stay").addEventListener("click", stay);
+
+    setTimeout(() => {
+        showYourSum();
+    }, 1000);
+    updatebetsize();
     
 }
 
@@ -98,6 +125,32 @@ function drawCard() {
     cardImg.classList.add("deal-animation");
     return { card, cardImg };
 }
+function updatebetsize(){
+    document.getElementById("bet-size").innerText = betAmount;
+}
+function doubleDown(){
+    if (balance < betAmount) {
+        alert("Not enough balance to double down!");
+        return;
+    }
+    if (!canDouble) return;
+
+    balance -= betAmount;
+    betAmount *= 2;
+
+    let { card, cardImg} = drawCard();
+    yourSum += getValue(card);
+    yourAceCount += checkAce(card);
+    reduceAce(yourSum, yourAceCount);
+    document.getElementById("your-cards").append(cardImg);
+    document.getElementById("hit").disabled = true;
+    document.getElementById("stay").disabled = true;
+    canDouble = false;
+    let hiddenCardImg = document.querySelector("#hidden");
+    hiddenCardImg.src = "./cards/" + hidden + ".png";
+    hiddenCardImg.classList.add("flip-animation");
+    stay();
+}
 
 function hit() {
     if (!canHit) return;
@@ -106,17 +159,31 @@ function hit() {
     yourSum += getValue(card);
     yourAceCount += checkAce(card);
     document.getElementById("your-cards").append(cardImg);
-
+    gameInProgress = true;
+    showYourSum();
     if (reduceAce(yourSum, yourAceCount) > 21) {
         canHit = false;
         determineOutcome();
     }
-    showYourSum();
+    
 }
 
 function showYourSum() {
-    document.getElementById("your-sum").innerText = yourSum;
+    let sumWithAce = yourSum;
+
+    if (yourAceCount > 0 && yourSum - 10 <= 21) {
+        sumWithAce = yourSum - 10;
+    }
+    let sumText = yourSum;
+    if (sumWithAce !== yourSum) {
+        sumText += " or " + sumWithAce;
+    }
+    if (yourSum > 21) {
+        sumText = sumWithAce
+    }
+    document.getElementById("your-sum").innerText = sumText;
 }
+
 
 function stay() {
     dealerSum = reduceAce(dealerSum, dealerAceCount);
@@ -134,42 +201,65 @@ function stay() {
         dealerAceCount += checkAce(card);
         document.getElementById("dealer-cards").append(cardImg);
     }
-
+    
     determineOutcome();
     showYourSum();
 }
 
 function determineOutcome() {
+    gamesPlayed++;
     const message = getOutcomeMessage();
     document.getElementById("dealer-sum").innerText = dealerSum;
     showYourSum();
     document.getElementById("results").innerText = message;
     document.getElementById("hit").disabled = true;
     document.getElementById("stay").disabled = true;
+    document.getElementById("double-down").disabled = true;
     document.getElementById("bet-amount").value = "";
     gameInProgress = false;
-
-    setTimeout(restartGame, 4000);
+    updateBalanceDisplay();
+    updateStatisticsDisplay();
+    
 }
 
 function getOutcomeMessage() {
-    if (yourSum > 21) return "You Lose!";
+    if (yourSum > 21) { 
+        losses++;
+        return `You Lost ${betAmount} dollars!`;
+        
+    }
+    if (yourSum === 21 && checkBlackjack()) {
+        balance += betAmount * 2.5;
+        blackjacks++;
+        return `BlackJack!! you win ${betAmount*2.5} dollars`
+    }
     if (dealerSum > 21) {
         balance += betAmount * 2;
-        updateBalanceDisplay();
-        return "You win!";
+        wins++;
+        return `You win ${betAmount * 2} dollars!`;
     }
     if (yourSum === dealerSum) {
         balance += betAmount;
-        updateBalanceDisplay();
-        return "Tie!";
+        ties++;
+        return `Tie! ${betAmount} dollars returned`;
     }
     if (yourSum > dealerSum) {
         balance += betAmount * 2;
-        updateBalanceDisplay();
-        return "You win!";
+        wins++;
+        return `You win ${betAmount * 2} dollars`;
     }
-    return "You lose!";
+    losses++;
+    return `You lose ${betAmount} dollars!`;
+}
+
+function checkBlackjack() {
+    let cards = document.getElementById("your-cards").querySelectorAll("img");
+    if (cards.length === 2) {
+        let firstCardValue = getValue(cards[0].src.split("/").pop().split(".")[0]);
+        let secondCardValue = getValue(cards[1].src.split("/").pop().split(".")[0]);
+        return (firstCardValue === 11 && secondCardValue === 10) || (firstCardValue === 10 && secondCardValue === 11);
+    }
+    return false;
 }
 
 function getValue(card) {
@@ -193,13 +283,27 @@ function reduceAce(sum, aceCount) {
     return sum;
 }
 
+function reBet() {
+    if (gameInProgress) {
+        alert("A game is already in progress. Please finish the current game.");
+        return;
+    }
+    if (playerBet > 0) {
+        restartGame();
+        document.getElementById("bet-amount").value = playerBet; // Set the bet amount input to the previous bet
+        placeBet();
+    } else {
+        alert("No previous bet to repeat");
+    }
+}
+
 function restartGame() {
     dealerSum = 0;
     yourSum = 0;
     dealerAceCount = 0;
     yourAceCount = 0;
     canHit = true;
-    betAmount = 0;
+    canDouble = true;
     gameInProgress = false;
 
     document.getElementById("dealer-sum").innerText = "";
@@ -211,7 +315,9 @@ function restartGame() {
 
     document.getElementById("hit").disabled = true;
     document.getElementById("stay").disabled = true;
+    document.getElementById("double-down").disabled = true;
     buildDeck();
     shuffleDeck();
     updateBalanceDisplay();
+    updateStatisticsDisplay();
 }
