@@ -1,0 +1,63 @@
+body{
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: center;
+}
+
+#dealer-cards img {
+    height: 175px;
+    width: 125px;
+    margin: 1px;
+}
+
+#your-cards img {
+    height: 175px;
+    width: 125px;
+    margin: 1px;
+    
+}
+#bet-amount {
+    width: 	150px;
+    height: 45px;
+    font-size: 20px;
+    margin: 1rem;
+}
+
+#place-bet{
+    width: 	150px;
+    height: 50px;
+    font-size: 20px;
+    
+}
+#hit, #stay, #restart {
+    width: 	100px;
+    height: 50px;
+    font-size: 20px;
+}
+
+@keyframes deal {
+    from {
+        transform: translateY(-100px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+@keyframes flip {
+    0% {
+        transform: perspective(600px) rotateY(0deg);
+    }
+    100% {
+        transform: perspective(600px) rotateY(180deg);
+    }
+}
+
+.deal-animation {
+    animation: deal 1.5s ease-out;
+}
+
+.flip-animation {
+    animation: flip 0.6s;
+}
