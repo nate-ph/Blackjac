@@ -24,7 +24,7 @@ window.onload = function() {
     buildDeck();
     shuffleDeck();
     updateBalanceDisplay();
-    document.getElementById("restart").addEventListener("click", restartGame);
+    document.getElementById("restart").addEventListener("click", resetGame);
     document.getElementById("place-bet").addEventListener("click", placeBet);
     document.getElementById("rebet").addEventListener("click", reBet);
     document.getElementById("hit").addEventListener("click", hit);
@@ -302,6 +302,36 @@ function restartGame() {
     yourSum = 0;
     dealerAceCount = 0;
     yourAceCount = 0;
+    canHit = true;
+    canDouble = true;
+    gameInProgress = false;
+
+    document.getElementById("dealer-sum").innerText = "";
+    document.getElementById("your-sum").innerText = "";
+    document.getElementById("results").innerText = "";
+
+    document.getElementById("dealer-cards").innerHTML = '<img src="./cards/BACK.png" id="hidden">';
+    document.getElementById("your-cards").innerHTML = "";
+
+    document.getElementById("hit").disabled = true;
+    document.getElementById("stay").disabled = true;
+    document.getElementById("double-down").disabled = true;
+    buildDeck();
+    shuffleDeck();
+    updateBalanceDisplay();
+    updateStatisticsDisplay();
+}
+function resetGame() {
+    dealerSum = 0;
+    yourSum = 0;
+    dealerAceCount = 0;
+    yourAceCount = 0;
+    balance = 1000;
+    gamesPlayed = 0;
+    wins = 0;
+    losses = 0;
+    ties = 0;
+    blackjacks = 0;
     canHit = true;
     canDouble = true;
     gameInProgress = false;
