@@ -348,5 +348,6 @@ function resetGame() {
     document.getElementById("double-down").disabled = true;
     buildDeck();
     shuffleDeck();
-    startGame();
+    updateBalanceDisplay();
+    updateStatisticsDisplay();
 }
