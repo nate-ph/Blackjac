@@ -328,6 +328,8 @@ function resetGame() {
     yourAceCount = 0;
     balance = 1000;
     gamesPlayed = 0;
+    betAmount = 0;
+    playerBet = 0;
     wins = 0;
     losses = 0;
     ties = 0;
